@@ -1,0 +1,50 @@
+{
+  "name": "syncnote",
+  "version": "1.0.0",
+  "description": "미니노트 - 폰과 PC 실시간 동기화 메모",
+  "author": "MiniNote",
+  "private": true,
+  "main": "electron/main.cjs",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "desktop": "vite build && electron .",
+    "dist:win": "vite build && electron-builder --win",
+    "android:sync": "vite build && cap sync android"
+  },
+  "build": {
+    "appId": "com.syncnote.app",
+    "productName": "MiniNote",
+    "files": [
+      "dist/**",
+      "electron/**"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "미니노트",
+      "uninstallDisplayName": "미니노트"
+    }
+  },
+  "dependencies": {
+    "@capacitor-firebase/authentication": "^8.6.0",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.6.2",
+    "firebase": "^12.19.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/cli": "^8.6.2",
+    "electron": "^45.4.1",
+    "electron-builder": "^26.18.0",
+    "vite": "^8.3.8"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "appId": "com.syncnote.app",
+  "appName": "미니노트",
+  "webDir": "dist",
+  "plugins": {
+    "FirebaseAuthentication": {
+      "skipNativeAuth": true,
+      "providers": ["google.com"]
+    }
+  }
+}

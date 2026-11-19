@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f4f4f2">
+<title>미니노트</title>
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- 로그인 화면 -->
+<section id="login" class="screen hidden">
+  <div class="login-box">
+    <img src="icons/icon-192.png" alt="" class="login-logo">
+    <h1>미니노트</h1>
+    <p class="login-sub">폰과 PC에서 같은 메모를 실시간으로</p>
+    <button id="btnGoogle" class="btn-google hidden">
+      <svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Google 계정으로 로그인
+    </button>
+    <p id="loginNotice" class="notice hidden"></p>
+    <button id="btnLocal" class="btn-text">로그인 없이 이 기기에서만 사용</button>
+    <p id="loginError" class="error"></p>
+  </div>
+</section>
+
+<!-- 노트 목록 -->
+<section id="main" class="screen hidden">
+  <header class="topbar">
+    <div class="brand"><img src="icons/icon-192.png" alt=""><span>미니노트</span><span id="trashLabel" class="trash-label hidden">휴지통</span></div>
+    <label class="search"><span data-icon="search"></span><input id="search" type="search" placeholder="노트 검색" autocomplete="off"></label>
+    <button id="syncBtn" class="sync gray" title="지금 동기화"><span data-icon="sync"></span><b></b></button>
+    <button id="btnView" class="icon-btn" title="보기 전환"></button>
+    <div class="menu-wrap">
+      <button id="btnSort" class="icon-btn" data-icon="sort" title="정렬"></button>
+      <div id="sortMenu" class="menu hidden">
+        <button data-sort="updated">수정한 순</button>
+        <button data-sort="created">만든 순</button>
+        <button data-sort="color">색상 순</button>
+        <button data-sort="title">제목 순</button>
+      </div>
+    </div>
+    <div class="menu-wrap">
+      <button id="btnMore" class="icon-btn" data-icon="more" title="메뉴"></button>
+      <div id="moreMenu" class="menu hidden">
+        <div id="acctInfo" class="menu-info"></div>
+        <button id="mTrash">휴지통</button>
+        <button id="mEmptyTrash" class="hidden">휴지통 비우기</button>
+        <button id="mTheme">테마: 자동</button>
+        <button id="mLogin" class="hidden">Google 로그인 (동기화 켜기)</button>
+        <button id="mLogout" class="hidden">로그아웃</button>
+      </div>
+    </div>
+  </header>
+  <nav id="colorFilter" class="chips"></nav>
+  <main id="notes" class="notes grid"></main>
+  <p id="empty" class="empty hidden"></p>
+  <div id="fabWrap" class="fab-wrap">
+    <div id="fabMenu" class="fab-menu hidden">
+      <button data-new="text"><span data-icon="text"></span>텍스트</button>
+      <button data-new="check"><span data-icon="check"></span>체크리스트</button>
+    </div>
+    <button id="fab" class="fab" data-icon="add" title="새 노트"></button>
+  </div>
+</section>
+
+<!-- 편집기 -->
+<div id="backdrop" class="hidden"></div>
+<section id="editor" class="hidden">
+  <header class="ed-bar">
+    <button id="edBack" class="icon-btn" data-icon="back" title="뒤로 (Esc)"></button>
+    <div class="spacer"></div>
+    <button id="edRestore" class="icon-btn hidden" data-icon="restore" title="복원"></button>
+    <button id="edPin" class="icon-btn" data-icon="pin" title="상단 고정"></button>
+    <button id="edType" class="icon-btn" data-icon="check" title="체크리스트로 전환"></button>
+    <button id="edColor" class="icon-btn" data-icon="palette" title="색상"></button>
+    <button id="edDelete" class="icon-btn" data-icon="delete" title="삭제"></button>
+  </header>
+  <div id="edPalette" class="palette hidden"></div>
+  <div id="edTrashBanner" class="banner hidden">휴지통에 있는 노트예요. 위의 복원 버튼을 누르면 다시 편집할 수 있어요.</div>
+  <div class="ed-body">
+    <input id="edTitle" class="ed-title" placeholder="제목" autocomplete="off">
+    <textarea id="edText" class="ed-text" placeholder="메모 입력"></textarea>
+    <div id="edList" class="ed-list hidden"></div>
+  </div>
+  <footer id="edMeta" class="ed-meta"></footer>
+</section>
+
+<div id="toast" class="toast hidden"></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
