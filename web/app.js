@@ -1402,15 +1402,9 @@ function bindUI() {
   };
 
   addEventListener('popstate', () => { if (S.draft) closeEditorNow(); });
-  if (platform === 'android') bindAndroidBack();
+  if (platform === 'android') bindAndroidBack(); else bindDesktopBack();
   addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-      if (S.modalClose) { closeModal(); return; }
-      if (!S.draft) return;
-      if (!$('fmtPop').classList.contains('hidden')) hidePop();
-      else if (!$('edPalette').classList.contains('hidden')) $('edPalette').classList.add('hidden');
-      else requestClose();
-    }
+    if (e.key === 'Escape' && !e.isComposing) { e.preventDefault(); goBack(); }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n' && S.store && !S.draft) { e.preventDefault(); newNote('text'); }
   });
   // 앱을 내리거나 닫을 때 바로 저장
@@ -1422,26 +1416,43 @@ function bindUI() {
 async function bindAndroidBack() {
   const { App } = await import('@capacitor/app');
   App.addListener('backButton', () => {
-    const openMenu = MENUS.some(id => !$(id).classList.contains('hidden'));
-    if (S.modalClose) {
-      closeModal();
-    } else if (S.draft) {
-      if (!$('fmtPop').classList.contains('hidden')) hidePop();
-      else if (!$('edPalette').classList.contains('hidden')) $('edPalette').classList.add('hidden');
-      else requestClose();
-    } else if (openMenu) {
-      closeMenus();
-    } else if (S.trash) {
-      S.trash = false; renderList(); scrollTo(0, 0);
-    } else if (S.query) {
-      S.query = ''; $('search').value = ''; $('search').blur(); renderList();
-    } else if (S.folder) {
-      leaveFolder();
-    } else {
-      flush();
-      App.exitApp();
+    if (!goBack()) { flush(); App.exitApp(); }
+  });
+}
+// PC: 마우스 뒤로가기 버튼, Alt+←, 입력 중이 아닐 때 Backspace
+function bindDesktopBack() {
+  const isBackBtn = e => e.button === 3;
+  addEventListener('mousedown', e => { if (isBackBtn(e)) e.preventDefault(); }, true);
+  addEventListener('mouseup', e => { if (isBackBtn(e)) { e.preventDefault(); goBack(); } }, true);
+  addEventListener('keydown', e => {
+    const typing = e.target.isContentEditable || e.target.closest?.('input, textarea, select');
+    if ((e.altKey && e.key === 'ArrowLeft') || (e.key === 'Backspace' && !typing && !e.ctrlKey && !e.altKey)) {
+      e.preventDefault();
+      goBack();
     }
   });
+}
+// 열린 것부터 하나씩 닫기. 더 닫을 게 없으면 false (노트 목록 맨 바깥)
+function goBack() {
+  const openMenu = MENUS.some(id => !$(id).classList.contains('hidden'));
+  if (S.modalClose) {
+    closeModal();
+  } else if (S.draft) {
+    if (!$('fmtPop').classList.contains('hidden')) hidePop();
+    else if (!$('edPalette').classList.contains('hidden')) $('edPalette').classList.add('hidden');
+    else requestClose();
+  } else if (openMenu) {
+    closeMenus();
+  } else if (S.trash) {
+    S.trash = false; renderList(); scrollTo(0, 0);
+  } else if (S.query) {
+    S.query = ''; $('search').value = ''; $('search').blur(); renderList();
+  } else if (S.folder) {
+    leaveFolder();
+  } else {
+    return false;
+  }
+  return true;
 }
 
 function closeEditorAfterDelete() {
