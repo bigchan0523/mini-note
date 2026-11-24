@@ -54,13 +54,29 @@
       </div>
     </div>
   </header>
+  <nav id="crumb" class="crumb hidden">
+    <button id="crumbHome" class="icon-btn" data-icon="home" title="맨 처음 목록으로"></button>
+    <span class="crumb-sep" data-icon="chevron"></span>
+    <span class="crumb-folder" data-icon="folder"></span>
+    <b id="crumbName"></b>
+    <div class="menu-wrap">
+      <button id="btnFolderMore" class="icon-btn" data-icon="more" title="폴더 메뉴"></button>
+      <div id="folderMenu" class="menu hidden">
+        <button id="fRename">폴더 이름 바꾸기</button>
+        <button id="fDelete">폴더 삭제</button>
+      </div>
+    </div>
+  </nav>
   <nav id="colorFilter" class="chips"></nav>
+  <p id="trashNote" class="trash-note hidden">휴지통의 노트는 30일이 지나면 자동으로 영구 삭제돼요.</p>
+  <div id="folders" class="folders hidden"></div>
   <main id="notes" class="notes grid"></main>
   <p id="empty" class="empty hidden"></p>
   <div id="fabWrap" class="fab-wrap">
     <div id="fabMenu" class="fab-menu hidden">
       <button data-new="text"><span data-icon="text"></span>텍스트</button>
       <button data-new="check"><span data-icon="check"></span>체크리스트</button>
+      <button id="newFolderBtn" data-new="folder"><span data-icon="folder"></span>폴더</button>
     </div>
     <button id="fab" class="fab" data-icon="add" title="새 노트"></button>
   </div>
@@ -75,6 +91,7 @@
     <button id="edRestore" class="icon-btn hidden" data-icon="restore" title="복원"></button>
     <button id="edPin" class="icon-btn" data-icon="pin" title="상단 고정"></button>
     <button id="edType" class="icon-btn" data-icon="check" title="체크리스트로 전환"></button>
+    <button id="edFolder" class="icon-btn" data-icon="folderMove" title="폴더로 옮기기"></button>
     <button id="edColor" class="icon-btn" data-icon="palette" title="색상"></button>
     <button id="edDelete" class="icon-btn" data-icon="delete" title="삭제"></button>
   </header>
@@ -82,12 +99,26 @@
   <div id="edTrashBanner" class="banner hidden">휴지통에 있는 노트예요. 위의 복원 버튼을 누르면 다시 편집할 수 있어요.</div>
   <div class="ed-body">
     <input id="edTitle" class="ed-title" placeholder="제목" autocomplete="off">
-    <textarea id="edText" class="ed-text" placeholder="메모 입력"></textarea>
+    <div id="edRich" class="ed-text ed-rich is-empty" contenteditable="true" data-ph="메모 입력" spellcheck="false"></div>
     <div id="edList" class="ed-list hidden"></div>
   </div>
   <footer id="edMeta" class="ed-meta"></footer>
+  <div class="ed-foot">
+    <div id="fmtPop" class="fmt-pop hidden"></div>
+    <div id="edTools" class="ed-tools">
+      <button data-fmt="check" title="체크박스 넣기"><span data-icon="checkbox"></span></button>
+      <button data-fmt="color" class="fmt-bar" title="텍스트 색상"><span data-icon="fcolor"></span><i id="fmtColorBar"></i></button>
+      <button data-fmt="hilite" class="fmt-bar" title="글자 배경색"><span data-icon="hilite"></span><i id="fmtHiliteBar"></i></button>
+      <button id="fmtBold" data-fmt="bold" title="굵게"><span data-icon="bold"></span></button>
+      <button data-fmt="style" class="fmt-txt" title="글자 스타일">Aa<small>▾</small></button>
+      <button data-fmt="size" class="fmt-txt" title="글자 크기"><span id="fmtSize">16</span><small>▾</small></button>
+      <button id="fmtUndo" data-fmt="undo" title="되돌리기"><span data-icon="undo"></span></button>
+      <button id="fmtRedo" data-fmt="redo" title="다시 실행"><span data-icon="redo"></span></button>
+    </div>
+  </div>
 </section>
 
+<div id="modal" class="modal hidden"><div id="modalBox" class="modal-box"></div></div>
 <div id="toast" class="toast hidden"></div>
 <script type="module" src="app.js"></script>
 </body>

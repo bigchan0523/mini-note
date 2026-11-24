@@ -1,8 +1,8 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 로그인한 본인만 자기 노트를 읽고 쓸 수 있음
-    match /users/{uid}/notes/{noteId} {
+    // 로그인한 본인만 자기 데이터(노트, 폴더)를 읽고 쓸 수 있음
+    match /users/{uid}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
   }
