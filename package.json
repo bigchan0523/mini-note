@@ -1,6 +1,6 @@
 {
   "name": "syncnote",
-  "version": "1.0.0",
+  "version": "1.4.0",
   "description": "미니노트 - 폰과 PC 실시간 동기화 메모",
   "author": "MiniNote",
   "private": true,

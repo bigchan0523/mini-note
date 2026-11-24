@@ -2,6 +2,7 @@
 <resources>
     <string name="app_name">미니노트</string>
     <string name="title_activity_main">미니노트</string>
+    <string name="share_label">미니노트 (PC로 보내기)</string>
     <string name="package_name">com.syncnote.app</string>
     <string name="custom_url_scheme">com.syncnote.app</string>
 </resources>

@@ -1,5 +1,6 @@
 import { firebaseConfig } from './firebase-config.js';
 import { LocalStore, initFirebase, platform } from './store.js';
+import { driveInit, driveStart, driveStop, driveSetVisible } from './drive.js';
 
 const COLORS = [
   ['red', '빨강'], ['orange', '주황'], ['yellow', '노랑'], ['green', '초록'], ['blue', '파랑'],
@@ -50,6 +51,7 @@ const ICONS = {
   hilite: 'M16.56 8.94 7.62 0 6.21 1.41l2.38 2.38-5.15 5.15c-.59.59-.59 1.54 0 2.12l5.5 5.5c.29.29.68.44 1.06.44s.77-.15 1.06-.44l5.5-5.5c.59-.58.59-1.53 0-2.12zM5.21 10 10 5.21 14.79 10H5.21zM19 11.5s-2 2.17-2 3.5c0 1.1.9 2 2 2s2-.9 2-2c0-1.33-2-3.5-2-3.5z',
   bold: 'M15.6 10.79c.97-.67 1.65-1.77 1.65-2.79 0-2.26-1.75-4-4-4H7v14h7.04c2.09 0 3.71-1.7 3.71-3.79 0-1.52-.86-2.82-2.15-3.42zM10 6.5h3c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-3v-3zm3.5 9H10v-3h3.5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5z',
   undo: 'M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z',
+  swap: 'M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z',
   redo: 'M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z',
 };
 
@@ -67,7 +69,7 @@ const pref = {
 const S = {
   notes: new Map(), folders: new Map(), store: null, fb: null, fbError: null, user: null, unsub: null,
   view: pref.get('view', 'grid'), sort: pref.get('sort', 'updated'), theme: pref.get('theme', 'auto'),
-  color: null, query: '', trash: false, folder: null, purged: false,
+  color: null, query: '', trash: false, folder: null, purged: false, drive: false,
   syncing: false, draft: null, isNew: false, dirty: false, saveTimer: 0, lastEdit: 0, recheck: 0, status: 'local',
   richDirty: false, hist: [], histIdx: -1, histTimer: 0, fontPx: 16, range: null, modalClose: null,
 };
@@ -192,6 +194,7 @@ function boot() {
   bindUI();
   bindRich();
   trackViewport();
+  driveInit({ toast, onShare: () => setDriveMode(true) }).catch(e => console.error(e));
 
   const hasConfig = !!(firebaseConfig.apiKey && firebaseConfig.projectId);
   if (hasConfig) {
@@ -267,6 +270,7 @@ function useCloud(user) {
   S.user = user;
   const store = S.fb.storeFor(user);
   startStore(store);
+  driveStart(S.fb.driveFor(user));
   // 로그인 전 이 기기에만 저장했던 노트를 계정으로 옮기기
   const local = LocalStore.peek();
   const localFolders = LocalStore.peekFolders();
@@ -296,6 +300,7 @@ function startStore(store) {
   S.unsub = store.subscribe(onNotes, setStatus, onFolders);
 }
 function stopStore() {
+  driveStop();
   if (S.unsub) { S.unsub(); S.unsub = null; }
   S.store = null;
 }
@@ -320,6 +325,21 @@ function purgeTrash() {
   [...S.notes.values()]
     .filter(n => n.deleted && n.deletedAt && n.deletedAt < cutoff)
     .forEach(n => Promise.resolve(S.store.remove(n.id)).catch(e => console.error(e)));
+}
+
+/* ================= 미니노트 ↔ 미니드라이브 전환 ================= */
+// 상단의 앱 이름을 누르면 노트 화면 대신 파일 주고받기 화면(drive.js)을 보여준다
+function setDriveMode(on) {
+  if (S.draft) requestClose();
+  S.drive = on;
+  if (on) { S.trash = false; S.query = ''; $('search').value = ''; }
+  closeMenus();
+  $('main').classList.toggle('drive-mode', on);
+  $('brandName').textContent = on ? '미니드라이브' : '미니노트';
+  $('brandBtn').title = on ? '누르면 미니노트로 전환' : '누르면 미니드라이브로 전환';
+  driveSetVisible(on);
+  renderList();
+  scrollTo(0, 0);
 }
 
 /* ================= 동기화 상태 ================= */
@@ -1320,6 +1340,7 @@ function toggleMenu(id) {
 function bindUI() {
   $('btnGoogle').onclick = doSignIn;
   $('btnLocal').onclick = () => { loginError(''); useLocal(); };
+  $('brandBtn').onclick = () => setDriveMode(!S.drive);
 
   $('search').oninput = e => { S.query = e.target.value; renderList(); };
   $('btnView').onclick = () => { S.view = S.view === 'grid' ? 'list' : 'grid'; pref.set('view', S.view); renderList(); };
@@ -1405,7 +1426,7 @@ function bindUI() {
   if (platform === 'android') bindAndroidBack(); else bindDesktopBack();
   addEventListener('keydown', e => {
     if (e.key === 'Escape' && !e.isComposing) { e.preventDefault(); goBack(); }
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n' && S.store && !S.draft) { e.preventDefault(); newNote('text'); }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n' && S.store && !S.draft && !S.drive) { e.preventDefault(); newNote('text'); }
   });
   // 앱을 내리거나 닫을 때 바로 저장
   addEventListener('pagehide', flush);
@@ -1443,6 +1464,8 @@ function goBack() {
     else requestClose();
   } else if (openMenu) {
     closeMenus();
+  } else if (S.drive) {
+    setDriveMode(false);
   } else if (S.trash) {
     S.trash = false; renderList(); scrollTo(0, 0);
   } else if (S.query) {

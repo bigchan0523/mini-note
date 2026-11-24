@@ -8,7 +8,7 @@ import {
 } from 'firebase/auth';
 import {
   initializeFirestore, getFirestore, persistentLocalCache, persistentMultipleTabManager,
-  collection, doc, setDoc, deleteDoc, onSnapshot, writeBatch, terminate, clearIndexedDbPersistence,
+  collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, writeBatch, terminate, clearIndexedDbPersistence,
   disableNetwork, enableNetwork, waitForPendingWrites,
 } from 'firebase/firestore';
 import { Capacitor } from '@capacitor/core';
@@ -114,6 +114,19 @@ export function initFirebase(config) {
       location.reload();
     },
     storeFor: user => new FirebaseStore(db, user),
+    // 미니드라이브: 파일 목록(메타)은 Firestore 실시간 구독, 파일 내용(조각)은 drive.js가 REST로 직접 주고받음
+    driveFor: user => {
+      const col = collection(db, 'users', user.uid, 'drive');
+      return {
+        uid: user.uid,
+        projectId: options.projectId,
+        token: () => user.getIdToken(),
+        subscribe: (cb, onErr) => onSnapshot(col, snap => cb(snap.docs.map(d => ({ ...d.data(), id: d.id }))), onErr),
+        saveMeta: m => setDoc(doc(col, m.id), m),
+        patchMeta: (id, patch) => updateDoc(doc(col, id), patch),
+        removeMeta: id => deleteDoc(doc(col, id)),
+      };
+    },
   };
 }
 

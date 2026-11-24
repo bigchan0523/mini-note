@@ -29,7 +29,7 @@
 <!-- 노트 목록 -->
 <section id="main" class="screen hidden">
   <header class="topbar">
-    <div class="brand"><img src="icons/icon-192.png" alt=""><span>미니노트</span><span id="trashLabel" class="trash-label hidden">휴지통</span></div>
+    <div class="brand"><button id="brandBtn" class="brand-btn" title="누르면 미니드라이브로 전환"><img src="icons/icon-192.png" alt=""><span id="brandName">미니노트</span><span class="brand-swap" data-icon="swap"></span></button><span id="trashLabel" class="trash-label hidden">휴지통</span></div>
     <label class="search"><span data-icon="search"></span><input id="search" type="search" placeholder="노트 검색" autocomplete="off"></label>
     <button id="syncBtn" class="sync gray" title="지금 동기화"><span data-icon="sync"></span><b></b></button>
     <button id="btnView" class="icon-btn" title="보기 전환"></button>
@@ -72,6 +72,25 @@
   <div id="folders" class="folders hidden"></div>
   <main id="notes" class="notes grid"></main>
   <p id="empty" class="empty hidden"></p>
+  <!-- 미니드라이브 (상단의 '미니노트' 글자를 누르면 이 화면으로 바뀜) -->
+  <section id="drive" class="drive hidden">
+    <p id="dvNeedLogin" class="empty hidden">미니드라이브는 Google 로그인을 해야 쓸 수 있어요.<br>오른쪽 위 ⋮ 메뉴에서 로그인하세요.</p>
+    <div id="dvBody">
+      <div class="dv-card dv-folder">
+        <span id="dvFolderIcon" class="dv-folder-ic"></span>
+        <div class="dv-folder-text"><small>받은 파일 저장 위치</small><b id="dvFolder"></b></div>
+        <button id="dvPick" class="btn-plain">변경</button>
+        <button id="dvOpen" class="btn-plain">열기</button>
+      </div>
+      <label id="dvAutoRow" class="dv-auto"><input id="dvAuto" type="checkbox"> 다른 기기에서 보낸 파일을 자동으로 받기</label>
+      <button id="dvSend" class="dv-send"><span id="dvSendIcon"></span>파일 보내기</button>
+      <p id="dvHint" class="dv-hint"></p>
+      <input id="dvInput" type="file" multiple hidden>
+      <div class="dv-usage"><div class="dv-usage-track"><i id="dvUsageBar"></i></div><span id="dvUsageText"></span></div>
+      <div id="dvList" class="dv-list"></div>
+      <p id="dvEmpty" class="empty hidden">아직 주고받은 파일이 없어요.</p>
+    </div>
+  </section>
   <div id="fabWrap" class="fab-wrap">
     <div id="fabMenu" class="fab-menu hidden">
       <button data-new="text"><span data-icon="text"></span>텍스트</button>

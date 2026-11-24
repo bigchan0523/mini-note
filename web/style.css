@@ -337,3 +337,44 @@ button { cursor: pointer; }
 @media (max-width: 899px) {
   #editor { inset: 0 0 auto 0; height: var(--vvh, 100%); }
 }
+
+/* ---------- 미니드라이브 ---------- */
+.brand-btn { display: flex; align-items: center; gap: 8px; border: 0; background: none; padding: 4px 8px 4px 0; border-radius: 10px; font: inherit; font-weight: 800; color: inherit; min-width: 0; }
+.brand-btn:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
+.brand-swap svg { width: 18px; height: 18px; fill: var(--muted); display: block; }
+/* 드라이브 화면일 때는 노트 쪽 화면 요소를 숨김 */
+.drive-mode .search, .drive-mode #syncBtn, .drive-mode #btnView, .drive-mode #btnSort, .drive-mode .menu-wrap:has(#btnSort),
+.drive-mode #crumb, .drive-mode #colorFilter, .drive-mode #trashNote, .drive-mode #folders, .drive-mode #notes,
+.drive-mode > #empty, .drive-mode #fabWrap, .drive-mode #mTrash, .drive-mode #mEmptyTrash, .drive-mode #trashLabel { display: none !important; }
+.drive { max-width: 760px; margin: 0 auto; padding: 6px 12px 60px; }
+.drive.dragging { outline: 3px dashed var(--accent); outline-offset: -6px; border-radius: 16px; }
+.dv-card { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); padding: 10px 12px; }
+.dv-folder { display: flex; align-items: center; gap: 8px; }
+.dv-folder-ic svg { width: 28px; height: 28px; fill: var(--yellow-d); display: block; }
+.dv-folder-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.dv-folder-text small { font-size: 12px; color: var(--muted); }
+.dv-folder-text b { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dv-auto { display: flex; align-items: center; gap: 8px; padding: 12px 6px 4px; font-size: 14px; cursor: pointer; }
+.dv-auto input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; }
+.dv-send {
+  width: 100%; margin-top: 10px; height: 56px; border: 0; border-radius: 14px; background: var(--accent); color: var(--accent-text);
+  font-size: 16.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: var(--shadow);
+}
+.dv-send:hover { filter: brightness(1.05); }
+.dv-send svg { width: 24px; height: 24px; fill: currentColor; display: block; }
+.dv-hint { margin: 8px 6px 0; font-size: 12.5px; color: var(--muted); }
+.dv-hint:empty { display: none; }
+.dv-usage { margin: 14px 6px 10px; font-size: 12px; color: var(--muted); }
+.dv-usage-track { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; margin-bottom: 5px; }
+.dv-usage-track i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 3px; }
+.dv-list { display: flex; flex-direction: column; gap: 6px; }
+.dv-row { display: flex; align-items: center; gap: 10px; background: var(--surface); border-radius: 12px; box-shadow: var(--shadow); padding: 8px 6px 8px 10px; }
+.dv-ic { width: 44px; height: 44px; flex: none; border-radius: 8px; background: var(--bg); display: grid; place-items: center; overflow: hidden; color: var(--muted); }
+.dv-ic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dv-ic svg { width: 24px; height: 24px; fill: currentColor; }
+.dv-info { flex: 1; min-width: 0; }
+.dv-name { font-size: 14.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dv-sub { font-size: 12px; color: var(--muted); margin-top: 2px; overflow-wrap: anywhere; }
+.dv-prog { height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; margin-top: 6px; }
+.dv-prog i { display: block; height: 100%; width: 0; background: #34a853; transition: width .2s; }
+.dv-btns { display: flex; flex: none; color: var(--muted); }

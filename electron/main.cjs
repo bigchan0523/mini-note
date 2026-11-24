@@ -1,6 +1,7 @@
 // 미니노트 PC(Windows) 앱 - Electron 메인 프로세스
-const { app, BrowserWindow, ipcMain, shell, protocol, net } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, protocol, net, dialog } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const http = require('http');
 const crypto = require('crypto');
 const { pathToFileURL } = require('url');
@@ -39,6 +40,7 @@ if (!app.requestSingleInstanceLock()) {
       return net.fetch(pathToFileURL(file).toString());
     });
     ipcMain.handle('google-sign-in', (_e, clientId, clientSecret) => googleSignIn(clientId, clientSecret));
+    registerDrive();
     createWindow();
   });
   app.on('window-all-closed', () => app.quit());
@@ -48,6 +50,63 @@ function focusWindow() {
   if (!win) return;
   if (win.isMinimized()) win.restore();
   win.show(); win.focus();
+}
+
+/* ---------- 미니드라이브: 받은 파일을 폴더에 저장 ---------- */
+// 화면(web/drive.js)이 파일 조각을 base64로 순서대로 넘겨주면 '이름.part' 에 이어 쓰고, 다 받으면 원래 이름으로 바꾼다
+const saves = new Map(); // id → { fh, tmp, dir, name }
+const safeName = n => (path.basename(String(n || '')).replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').replace(/[. ]+$/, '') || '파일').slice(0, 180);
+function uniquePath(dir, name) {
+  const ext = path.extname(name), base = path.basename(name, ext);
+  let p = path.join(dir, name);
+  for (let i = 1; fs.existsSync(p); i++) p = path.join(dir, `${base} (${i})${ext}`);
+  return p;
+}
+function registerDrive() {
+  const defaultFolder = () => path.join(app.getPath('downloads'), '미니드라이브');
+  ipcMain.handle('drive-default-folder', defaultFolder);
+  ipcMain.handle('drive-pick-folder', async (_e, current) => {
+    const r = await dialog.showOpenDialog(win, {
+      title: '받은 파일을 저장할 폴더', defaultPath: current && fs.existsSync(current) ? current : app.getPath('downloads'),
+      properties: ['openDirectory', 'createDirectory'],
+    });
+    return r.canceled ? null : r.filePaths[0];
+  });
+  ipcMain.handle('drive-save-begin', async (_e, folder, name) => {
+    const dir = folder || defaultFolder();
+    await fs.promises.mkdir(dir, { recursive: true });
+    const id = crypto.randomBytes(8).toString('hex');
+    const tmp = uniquePath(dir, safeName(name) + '.part');
+    saves.set(id, { fh: await fs.promises.open(tmp, 'w'), tmp, dir, name: safeName(name) });
+    return id;
+  });
+  ipcMain.handle('drive-save-append', async (_e, id, b64) => {
+    const s = saves.get(id);
+    if (!s) throw new Error('저장 작업을 찾을 수 없어요');
+    await s.fh.write(Buffer.from(b64, 'base64'));
+  });
+  ipcMain.handle('drive-save-finish', async (_e, id) => {
+    const s = saves.get(id);
+    if (!s) throw new Error('저장 작업을 찾을 수 없어요');
+    saves.delete(id);
+    await s.fh.close();
+    const final = uniquePath(s.dir, s.name);
+    await fs.promises.rename(s.tmp, final);
+    return final;
+  });
+  ipcMain.handle('drive-save-abort', async (_e, id) => {
+    const s = saves.get(id);
+    if (!s) return;
+    saves.delete(id);
+    await s.fh.close().catch(() => {});
+    await fs.promises.unlink(s.tmp).catch(() => {});
+  });
+  // 파일 열기 / 폴더 열기. 실패하면 오류 글자를 돌려줌 (성공은 빈 글자)
+  ipcMain.handle('drive-open', async (_e, p, isFolder) => {
+    if (isFolder) await fs.promises.mkdir(p, { recursive: true }).catch(() => {});
+    if (!fs.existsSync(p)) return 'not found';
+    return shell.openPath(p);
+  });
 }
 
 /* ---------- Google 로그인 (기본 브라우저 + 루프백 + PKCE) ---------- */
