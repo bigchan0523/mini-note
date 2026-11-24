@@ -336,6 +336,8 @@ function setDriveMode(on) {
   closeMenus();
   $('main').classList.toggle('drive-mode', on);
   $('brandName').textContent = on ? '미니드라이브' : '미니노트';
+  $('brandNoteIcon').classList.toggle('hidden', on);
+  $('brandDriveIcon').classList.toggle('hidden', !on);
   $('brandBtn').title = on ? '누르면 미니노트로 전환' : '누르면 미니드라이브로 전환';
   driveSetVisible(on);
   renderList();

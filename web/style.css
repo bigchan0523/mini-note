@@ -341,6 +341,7 @@ button { cursor: pointer; }
 /* ---------- 미니드라이브 ---------- */
 .brand-btn { display: flex; align-items: center; gap: 8px; border: 0; background: none; padding: 4px 8px 4px 0; border-radius: 10px; font: inherit; font-weight: 800; color: inherit; min-width: 0; }
 .brand-btn:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
+.brand-drive { width: 28px; height: 28px; flex: none; display: block; }
 .brand-swap svg { width: 18px; height: 18px; fill: var(--muted); display: block; }
 /* 드라이브 화면일 때는 노트 쪽 화면 요소를 숨김 */
 .drive-mode .search, .drive-mode #syncBtn, .drive-mode #btnView, .drive-mode #btnSort, .drive-mode .menu-wrap:has(#btnSort),
