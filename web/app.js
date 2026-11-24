@@ -92,6 +92,7 @@ function normalizeFolder(f) {
   const now = Date.now();
   return {
     id: String(f.id), name: String(f.name || '새 폴더').slice(0, 60),
+    color: COLOR_IDS.includes(f.color) ? f.color : 'yellow',
     createdAt: Number(f.createdAt) || now, updatedAt: Number(f.updatedAt) || now,
   };
 }
@@ -441,7 +442,10 @@ function renderList() {
 
   // 폴더 경로 표시
   $('crumb').classList.toggle('hidden', !inFolder);
-  if (inFolder) $('crumbName').textContent = S.folders.get(inFolder).name;
+  if (inFolder) {
+    $('crumbName').textContent = S.folders.get(inFolder).name;
+    setColorClass($('crumb'), S.folders.get(inFolder).color);
+  }
 
   const box = $('notes');
   box.className = 'notes ' + S.view;
@@ -467,6 +471,7 @@ function renderList() {
 
 function folderCard(f, count) {
   const c = el('button', 'fcard');
+  setColorClass(c, f.color);
   c.title = f.name;
   const ic = el('span', 'fcard-icon'); ic.innerHTML = svg('folder');
   const cnt = el('span', 'fcard-count'); cnt.textContent = count;
@@ -509,9 +514,78 @@ function card(n) {
   const x = el('span'); x.textContent = extra;
   meta.append(d, x);
   c.append(t, body, meta);
-  c.onclick = () => openNote(n.id);
+  // 우클릭(폰은 길게 누르기)하면 편집기 상단과 같은 기능 메뉴
+  let timer = 0, longPressed = false;
+  c.onpointerdown = e => {
+    longPressed = false;
+    if (e.pointerType === 'mouse') return;
+    timer = setTimeout(() => { longPressed = true; noteActions(n.id); }, 550);
+  };
+  c.onpointerup = c.onpointerleave = c.onpointercancel = () => clearTimeout(timer);
+  c.oncontextmenu = e => { e.preventDefault(); clearTimeout(timer); if (!longPressed) noteActions(n.id); };
+  c.onclick = () => { if (!longPressed) openNote(n.id); };
   c.onkeydown = e => { if (e.key === 'Enter') openNote(n.id); };
   return c;
+}
+
+/* ================= 노트 카드 메뉴 ================= */
+function saveNote(n, patch) {
+  const nn = { ...n, ...patch, updatedAt: Date.now() };
+  S.notes.set(nn.id, nn);
+  Promise.resolve(S.store.save(nn)).catch(e => { console.error(e); toast('저장 실패: ' + (e.code || e.message)); });
+  renderList();
+  return nn;
+}
+async function noteActions(id) {
+  const n = S.notes.get(id); if (!n) return;
+  if (n.deleted) {
+    const v = await pickSheet(displayTitle(n), [
+      { label: '복원', value: 'restore' },
+      { label: '영구 삭제', value: 'purge', danger: true },
+    ]);
+    if (v === 'restore') { restoreNote(n); toast('노트를 복원했어요'); }
+    else if (v === 'purge' && confirm('이 노트를 영구 삭제할까요? 되돌릴 수 없어요.')) S.store.remove(id);
+    return;
+  }
+  const v = await pickSheet(displayTitle(n), [
+    { label: n.pinned ? '고정 해제' : '상단 고정', value: 'pin' },
+    { label: n.type === 'check' ? '텍스트 노트로 전환' : '체크리스트로 전환', value: 'type' },
+    { label: '폴더로 옮기기', value: 'folder' },
+    { label: '색상 바꾸기', value: 'color' },
+    { label: '삭제', value: 'delete', danger: true },
+  ]);
+  const cur = S.notes.get(id); if (!cur || !v) return;
+  if (v === 'pin') saveNote(cur, { pinned: !cur.pinned });
+  else if (v === 'type') saveNote(cur, convertType(clone(cur)));
+  else if (v === 'folder') {
+    const f = await chooseFolder(folderOf(cur));
+    if (f === null) return;
+    saveNote(S.notes.get(id) || cur, { folderId: f });
+    toast(f ? `'${S.folders.get(f)?.name}' 폴더로 옮겼어요` : '폴더 밖으로 옮겼어요');
+  } else if (v === 'color') {
+    const c = await pickColor('노트 색상', cur.color);
+    if (c && c !== cur.color) { saveNote(cur, { color: c }); pref.set('lastColor', c); }
+  } else if (v === 'delete') {
+    const copy = clone(cur);
+    saveNote(cur, { deleted: true, deletedAt: Date.now() });
+    toast(`휴지통으로 옮겼어요 (${TRASH_DAYS}일 후 자동 삭제)`, '실행 취소', () => restoreNote(copy));
+  }
+}
+function pickColor(title, current) {
+  return openModal((box, done) => {
+    const h = el('h3'); h.textContent = title;
+    const pal = el('div', 'modal-palette');
+    COLORS.forEach(([c, name]) => {
+      const b = el('button', 'swatch c-' + c + (c === current ? ' active' : ''));
+      b.title = name; b.setAttribute('aria-label', name);
+      b.onclick = () => done(c);
+      pal.append(b);
+    });
+    const row = el('div', 'modal-actions');
+    const cancel = el('button', 'btn-plain'); cancel.textContent = '닫기'; cancel.onclick = () => done(null);
+    row.append(cancel);
+    box.append(h, pal, row);
+  });
 }
 
 /* ================= 폴더 ================= */
@@ -531,7 +605,7 @@ async function createFolder() {
   const name = (await askText('새 폴더', '', '만들기', '폴더 이름'))?.trim();
   if (!name) return null;
   const now = Date.now();
-  const f = { id: uid(), name: name.slice(0, 60), createdAt: now, updatedAt: now };
+  const f = { id: uid(), name: name.slice(0, 60), color: 'yellow', createdAt: now, updatedAt: now };
   S.folders.set(f.id, f);
   Promise.resolve(S.store.saveFolder(f)).catch(e => { console.error(e); toast('폴더 저장 실패: ' + (e.code || e.message)); });
   renderList();
@@ -563,21 +637,39 @@ function deleteFolder(id) {
 }
 async function folderActions(id) {
   const f = S.folders.get(id); if (!f) return;
-  const v = await pickSheet(f.name, [{ label: '이름 바꾸기', value: 'rename' }, { label: '폴더 삭제', value: 'delete', danger: true }]);
+  const v = await pickSheet(f.name, [
+    { label: '이름 바꾸기', value: 'rename' },
+    { label: '색상 바꾸기', value: 'color' },
+    { label: '폴더 삭제', value: 'delete', danger: true },
+  ]);
   if (v === 'rename') renameFolder(id);
+  else if (v === 'color') recolorFolder(id);
   else if (v === 'delete') deleteFolder(id);
 }
-async function moveDraftToFolder() {
-  const d = S.draft; if (!d) return;
-  const cur = folderOf(d);
+async function recolorFolder(id) {
+  const f = S.folders.get(id); if (!f) return;
+  const c = await pickColor('폴더 색상', f.color);
+  if (!c || c === f.color) return;
+  const nf = { ...f, color: c, updatedAt: Date.now() };
+  S.folders.set(id, nf);
+  Promise.resolve(S.store.saveFolder(nf)).catch(e => { console.error(e); toast('폴더 저장 실패: ' + (e.code || e.message)); });
+  renderList();
+}
+// 옮길 폴더 고르기: 폴더 id, '' (폴더 없음), null (취소)
+async function chooseFolder(cur) {
   const opts = [{ label: '폴더 없음', value: '', active: !cur }]
     .concat([...S.folders.values()].sort((a, b) => a.name.localeCompare(b.name, 'ko'))
       .map(f => ({ label: '📁 ' + f.name, value: f.id, active: cur === f.id })))
     .concat([{ label: '+ 새 폴더 만들기', value: '__new' }]);
   let v = await pickSheet('폴더로 옮기기', opts);
-  if (v === null || v === undefined) return;
-  if (v === '__new') { v = await createFolder(); if (!v) return; }
-  if (v === cur) return;
+  if (v === null || v === undefined) return null;
+  if (v === '__new') { v = await createFolder(); if (!v) return null; }
+  return v === cur ? null : v;
+}
+async function moveDraftToFolder() {
+  const d = S.draft; if (!d) return;
+  const v = await chooseFolder(folderOf(d));
+  if (v === null) return;
   d.folderId = v;
   edited();
   updateMeta();
@@ -1187,6 +1279,14 @@ function closeEditorNow(skipSave) {
 function toggleType() {
   const d = S.draft;
   pullRich();
+  convertType(d);
+  edited();
+  fillEditor(false);
+  resetHist();
+  if (d.type === 'text') rich().focus();
+}
+// 텍스트 ↔ 체크리스트 변환 (노트 객체를 직접 고치고 그대로 돌려줌)
+function convertType(d) {
   if (d.type === 'text') {
     const lines = d.body.split('\n').filter(l => l.replace(/^[☐☑]\s?/, '').trim());
     d.items = (lines.length ? lines : ['']).map(l => {
@@ -1199,10 +1299,7 @@ function toggleType() {
     d.html = textToHtml(d.body);
     d.items = []; d.type = 'text';
   }
-  edited();
-  fillEditor(false);
-  resetHist();
-  if (d.type === 'text') rich().focus();
+  return d;
 }
 
 function restoreNote(copy) {
